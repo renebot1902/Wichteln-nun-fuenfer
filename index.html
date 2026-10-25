@@ -49,6 +49,17 @@
       font-weight: normal;
       opacity: 0.9;
     }
+    .status-badge {
+      display: inline-block;
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      font-weight: bold;
+    }
     .input-group {
       display: flex;
       gap: 8px;
@@ -98,7 +109,8 @@
       color: #ccc;
       margin-top: 24px;
       font-size: 0.85rem;
-      padding: 8px 14px;
+      padding: 10px 14px;
+      width: 100%;
     }
     .name-list {
       list-style: none;
@@ -112,28 +124,40 @@
     .name-tag {
       background: #0f291e;
       border: 1px solid #2e5946;
-      padding: 6px 12px;
+      padding: 8px 14px;
       border-radius: 20px;
       display: flex;
       align-items: center;
       gap: 8px;
       font-size: 0.95rem;
     }
-    .name-tag span {
+    .name-tag.fixed-host {
+      border-color: var(--accent);
+      background: #143527;
+      color: var(--accent);
+      font-weight: bold;
+    }
+    .name-tag span.delete-btn {
       cursor: pointer;
       color: #ff6b6b;
       font-weight: bold;
+      padding-left: 4px;
+      font-size: 1.1rem;
     }
     .result-item {
       background: #0f291e;
       border: 1px solid #2e5946;
       border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       text-align: left;
+    }
+    .result-item.host-item {
+      border: 2px solid var(--accent);
+      background: #133325;
     }
     .result-header {
       font-weight: bold;
@@ -159,6 +183,18 @@
       background: #2b4c3b;
       color: #b8d8c8;
     }
+    .btn-self {
+      width: 100%;
+      background: var(--accent);
+      color: #111;
+      text-decoration: none;
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      display: inline-block;
+    }
     .reveal-box {
       background: #0d2219;
       border: 2px dashed var(--accent);
@@ -173,12 +209,20 @@
       margin: 15px 0 5px 0;
       letter-spacing: 0.5px;
     }
+    .btn-back {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      margin-top: 15px;
+      padding: 10px 18px;
+      font-size: 0.9rem;
+    }
     .hidden {
       display: none !important;
     }
     .hint {
       font-size: 0.85rem;
-      opacity: 0.75;
+      opacity: 0.8;
       margin-top: 12px;
       line-height: 1.4;
     }
@@ -186,29 +230,34 @@
 </head>
 <body>
 
-  <!-- ANSICHT 1: ORGANISATOR (NAMEN EINGEBEN & AUSLOSEN) -->
+  <!-- ANSICHT 1: ORGANISATOR (NAMEN SAMMELN & AUSLOSEN) -->
   <div id="organizer-view" class="container hidden">
     <h1>🎄 Treffpunkt zum Fünfer</h1>
-    <h2>Weihnachtswichteln – Auslosung</h2>
+    <h2>Weihnachtswichteln – Teilnehmerliste</h2>
 
     <div id="setup-section">
+      <div class="status-badge" id="counter-badge">📋 Aktuell 1 Teilnehmer gespeichert</div>
+
       <div class="input-group">
-        <input type="text" id="name-input" placeholder="Name eingeben (z. B. Angie)" onkeypress="handleEnter(event)">
-        <button class="btn-add" onclick="addName()">+ Dazu</button>
+        <input type="text" id="name-input" placeholder="Neuen Namen eintragen..." onkeypress="handleEnter(event)">
+        <button class="btn-add" onclick="addName()">+ Speichern</button>
       </div>
 
       <ul id="name-list" class="name-list"></ul>
 
-      <button id="draw-btn" class="btn-draw hidden" onclick="drawNames()">🎲 Jetzt geheim auslosen</button>
-      <p class="hint">Trage alle Teilnehmer ein. Niemand kann sich selbst ziehen.</p>
+      <p class="hint">
+        💡 <strong>Automatisch gespeichert:</strong> Du kannst über Tage hinweg jederzeit neue Namen eintragen. Die Liste bleibt gespeichert, bis du auf Auslosen drückst.
+      </p>
+
+      <button id="draw-btn" class="btn-draw hidden" onclick="confirmDraw()">🎲 Jetzt endgültig auslosen</button>
     </div>
 
     <div id="results-section" class="hidden">
       <p class="hint" style="margin-top:0; margin-bottom:15px;">
-        <strong>Auslosung fertig!</strong> Schicke jedem seinen Link via WhatsApp. Du kannst die Ergebnisse vorab nicht einsehen.
+        <strong>Auslosung fertig!</strong> Öffne dein eigenes Los direkt hier und schicke allen anderen ihren Geheim-Link per WhatsApp.
       </p>
       <div id="links-container"></div>
-      <button class="btn-reset" onclick="resetAll()">🔄 Alles löschen & neu auslosen</button>
+      <button class="btn-reset" onclick="resetDrawOnly()">🔙 Auslosung verwerfen & zurück zur Namensliste</button>
     </div>
   </div>
 
@@ -229,13 +278,17 @@
       <div id="target-name" class="target-name"></div>
       <div class="hint" style="margin-top: 10px;">🤫 Pssst! Behalt es für dich!</div>
     </div>
+
+    <button id="back-to-admin-btn" class="btn-back hidden" onclick="backToOrganizer()">⬅️ Zurück zur WhatsApp-Verteilung</button>
   </div>
 
   <script>
-    let participants = [];
-    const STORAGE_KEY = 'fuenfer_wichteln_data_v2';
+    const HOST_NAME = 'Rene';
+    const LIST_STORAGE_KEY = 'fuenfer_wichteln_namelist_v3';
+    const DRAW_STORAGE_KEY = 'fuenfer_wichteln_draw_v3';
 
-    // URL-sichere Verschlüsselung
+    let participants = [HOST_NAME];
+
     function encodeLos(from, to) {
       const payload = { f: from, t: to, r: Math.floor(1000 + Math.random() * 9000) };
       const str = encodeURIComponent(JSON.stringify(payload));
@@ -253,6 +306,9 @@
     }
 
     window.onload = function() {
+      // Altes Test-Wichteln einmalig aufräumen, falls noch vorhanden
+      localStorage.removeItem('fuenfer_wichteln_data_v2');
+
       const params = new URLSearchParams(window.location.search);
       const losCode = params.get('los');
 
@@ -262,13 +318,56 @@
           document.getElementById('receiver-view').classList.remove('hidden');
           document.getElementById('giver-name').textContent = data.f;
           document.getElementById('target-name').textContent = data.t;
+
+          // Wenn Rene sein eigenes Los am selben Handy anschaut, Zurück-Button zeigen
+          if (data.f.toLowerCase() === HOST_NAME.toLowerCase()) {
+            document.getElementById('back-to-admin-btn').classList.remove('hidden');
+          }
           return;
         }
       }
 
       document.getElementById('organizer-view').classList.remove('hidden');
-      loadSavedState();
+      loadState();
     };
+
+    function backToOrganizer() {
+      window.location.href = window.location.origin + window.location.pathname;
+    }
+
+    function loadState() {
+      // 1. Gespeicherte Namensliste laden
+      const savedList = localStorage.getItem(LIST_STORAGE_KEY);
+      if (savedList) {
+        try {
+          const parsed = JSON.parse(savedList);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            participants = parsed;
+          }
+        } catch (e) {}
+      }
+      
+      // Sicherstellen, dass Rene immer an Position 1 steht
+      participants = participants.filter(p => p.toLowerCase() !== HOST_NAME.toLowerCase());
+      participants.unshift(HOST_NAME);
+      saveParticipants();
+      renderNameList();
+
+      // 2. Prüfen, ob bereits ausgelost wurde
+      const savedDraw = localStorage.getItem(DRAW_STORAGE_KEY);
+      if (savedDraw) {
+        try {
+          const pairs = JSON.parse(savedDraw);
+          if (Array.isArray(pairs) && pairs.length > 0) {
+            renderResults(pairs);
+          }
+        } catch (e) {}
+      }
+    }
+
+    function saveParticipants() {
+      localStorage.setItem(LIST_STORAGE_KEY, JSON.stringify(participants));
+    }
 
     function handleEnter(e) {
       if (e.key === 'Enter') addName();
@@ -283,47 +382,80 @@
       
       for (const name of newNames) {
         if (participants.some(p => p.toLowerCase() === name.toLowerCase())) {
-          alert(name + ' ist schon in der Liste!');
+          alert('"' + name + '" ist bereits in der Liste gespeichert!');
           continue;
         }
         participants.push(name);
       }
 
+      saveParticipants();
       input.value = '';
       input.focus();
       renderNameList();
     }
 
     function removeName(index) {
+      const nameToRemove = participants[index];
+      if (nameToRemove.toLowerCase() === HOST_NAME.toLowerCase()) {
+        alert('Du bist der Organisator und bleibst fix in der Liste!');
+        return;
+      }
+
+      // 1. Sicherheitsabfrage
+      const firstConfirm = confirm(`1. Nachfrage:\nMöchtest du "${nameToRemove}" wirklich aus der Teilnehmerliste löschen?`);
+      if (!firstConfirm) return;
+
+      // 2. Sicherheitsabfrage
+      const secondConfirm = confirm(`2. Sicherheitsabfrage:\nBist du dir absolut sicher, dass "${nameToRemove}" endgültig gelöscht werden soll?`);
+      if (!secondConfirm) return;
+
       participants.splice(index, 1);
+      saveParticipants();
       renderNameList();
     }
 
     function renderNameList() {
       const list = document.getElementById('name-list');
       list.innerHTML = '';
+
       participants.forEach((name, idx) => {
+        const isHost = name.toLowerCase() === HOST_NAME.toLowerCase();
         const li = document.createElement('li');
-        li.className = 'name-tag';
-        li.innerHTML = `${escapeHtml(name)} <span onclick="removeName(${idx})">✕</span>`;
+        li.className = 'name-tag' + (isHost ? ' fixed-host' : '');
+        
+        if (isHost) {
+          li.innerHTML = `👑 ${escapeHtml(name)} (Du)`;
+        } else {
+          li.innerHTML = `${escapeHtml(name)} <span class="delete-btn" onclick="removeName(${idx})" title="Löschen">✕</span>`;
+        }
         list.appendChild(li);
       });
+
+      const badge = document.getElementById('counter-badge');
+      badge.textContent = `📋 Aktuell ${participants.length} ${participants.length === 1 ? 'Teilnehmer' : 'Teilnehmer'} gespeichert`;
 
       const drawBtn = document.getElementById('draw-btn');
       if (participants.length >= 3) {
         drawBtn.classList.remove('hidden');
-        drawBtn.textContent = `🎲 Jetzt geheim auslosen (${participants.length} Personen)`;
+        drawBtn.textContent = `🎲 Jetzt auslosen (${participants.length} Personen)`;
       } else {
         drawBtn.classList.add('hidden');
       }
     }
 
-    function drawNames() {
+    function confirmDraw() {
       if (participants.length < 3) {
-        alert('Bitte gib mindestens 3 Namen ein!');
+        alert('Es müssen mindestens 3 Teilnehmer auf der Liste stehen!');
         return;
       }
 
+      const ok = confirm(`Sind wirklich ALLE ${participants.length} Teilnehmer eingetragen?\n\nKlicke auf OK, um die geheime Auslosung jetzt zu starten.`);
+      if (ok) {
+        drawNames();
+      }
+    }
+
+    function drawNames() {
       const shuffled = [...participants];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -339,9 +471,14 @@
         };
       });
 
-      pairs.sort((a, b) => a.from.localeCompare(b.from));
+      // Rene immer ganz oben anzeigen, den Rest alphabetisch
+      pairs.sort((a, b) => {
+        if (a.from.toLowerCase() === HOST_NAME.toLowerCase()) return -1;
+        if (b.from.toLowerCase() === HOST_NAME.toLowerCase()) return 1;
+        return a.from.localeCompare(b.from);
+      });
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pairs));
+      localStorage.setItem(DRAW_STORAGE_KEY, JSON.stringify(pairs));
       renderResults(pairs);
     }
 
@@ -356,64 +493,71 @@
 
       pairs.forEach((item, index) => {
         const secretUrl = `${baseUrl}?los=${item.code}`;
-        const waText = `🎄 *Weihnachtswichteln – Treffpunkt zum Fünfer* 🎄\n\nServus ${item.from}! Hier ist dein geheimes Wichtel-Los. Klicke auf den Link, um zu sehen, wen du heuer beschenkst:\n\n👉 ${secretUrl}`;
-        const waLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+        const isHost = item.from.toLowerCase() === HOST_NAME.toLowerCase();
 
         const div = document.createElement('div');
-        div.className = 'result-item';
-        div.innerHTML = `
-          <div class="result-header">
-            <span>👤 ${escapeHtml(item.from)}</span>
-            <span id="status-${index}" style="font-size:0.85rem; color:#88d4ab;">${item.sent ? '✅ Geteilt' : ''}</span>
-          </div>
-          <a href="${waLink}" target="_blank" id="wa-btn-${index}" class="btn-wa ${item.sent ? 'sent' : ''}" onclick="markAsSent(${index})">
-            ${item.sent ? '✅ Nochmal per WhatsApp' : '📲 Per WhatsApp senden'}
-          </a>
-        `;
+        div.className = 'result-item' + (isHost ? ' host-item' : '');
+
+        if (isHost) {
+          div.innerHTML = `
+            <div class="result-header">
+              <span style="color: var(--accent);">👑 ${escapeHtml(item.from)} (Dein eigenes Los)</span>
+              <span id="status-${index}" style="font-size:0.85rem; color:#88d4ab;">${item.sent ? '✅ Angeschaut' : ''}</span>
+            </div>
+            <a href="${secretUrl}" id="wa-btn-${index}" class="btn-self" onclick="markAsSent(${index})">
+              🎁 Mein eigenes Los hier öffnen
+            </a>
+          `;
+        } else {
+          const waText = `🎄 *Weihnachtswichteln – Treffpunkt zum Fünfer* 🎄\n\nServus ${item.from}! Hier ist dein geheimes Wichtel-Los. Klicke auf den Link, um zu sehen, wen du heuer beschenkst:\n\n👉 ${secretUrl}`;
+          const waLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+
+          div.innerHTML = `
+            <div class="result-header">
+              <span>👤 ${escapeHtml(item.from)}</span>
+              <span id="status-${index}" style="font-size:0.85rem; color:#88d4ab;">${item.sent ? '✅ Geteilt' : ''}</span>
+            </div>
+            <a href="${waLink}" target="_blank" id="wa-btn-${index}" class="btn-wa ${item.sent ? 'sent' : ''}" onclick="markAsSent(${index})">
+              ${item.sent ? '✅ Nochmal per WhatsApp' : '📲 Per WhatsApp senden'}
+            </a>
+          `;
+        }
         container.appendChild(div);
       });
     }
 
     function markAsSent(index) {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(DRAW_STORAGE_KEY);
       if (!saved) return;
       const pairs = JSON.parse(saved);
       if (pairs[index]) {
         pairs[index].sent = true;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(pairs));
+        localStorage.setItem(DRAW_STORAGE_KEY, JSON.stringify(pairs));
         
+        const isHost = pairs[index].from.toLowerCase() === HOST_NAME.toLowerCase();
         const btn = document.getElementById(`wa-btn-${index}`);
         const status = document.getElementById(`status-${index}`);
-        if (btn) {
+        if (btn && !isHost) {
           btn.classList.add('sent');
           btn.textContent = '✅ Nochmal per WhatsApp';
         }
         if (status) {
-          status.textContent = '✅ Geteilt';
+          status.textContent = isHost ? '✅ Angeschaut' : '✅ Geteilt';
         }
       }
     }
 
-    function loadSavedState() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          const pairs = JSON.parse(saved);
-          if (Array.isArray(pairs) && pairs.length > 0) {
-            renderResults(pairs);
-          }
-        } catch (e) {}
-      }
-    }
+    function resetDrawOnly() {
+      const first = confirm('1. Nachfrage:\nWillst du die aktuelle Auslosung wirklich verwerfen und zur Namensliste zurückkehren?');
+      if (!first) return;
+      
+      const second = confirm('2. Sicherheitsabfrage:\nBist du sicher? (Deine eingetragenen Namen bleiben alle gespeichert, nur die Lose werden zurückgesetzt.)');
+      if (!second) return;
 
-    function resetAll() {
-      if (confirm('Willst du die aktuelle Auslosung wirklich löschen und neu starten?')) {
-        localStorage.removeItem(STORAGE_KEY);
-        participants = [];
-        document.getElementById('results-section').classList.add('hidden');
-        document.getElementById('setup-section').classList.remove('hidden');
-        renderNameList();
-      }
+      localStorage.removeItem(DRAW_STORAGE_KEY);
+      document.getElementById('results-section').classList.add('hidden');
+      document.getElementById('setup-section').classList.remove('hidden');
+      renderNameList();
     }
 
     function revealTarget() {
