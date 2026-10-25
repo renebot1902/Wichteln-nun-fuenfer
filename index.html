@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wichteln – Treffpunkt zum Fünfer</title>
+  <style>
+    :root {
+      --bg-color: #0f291e;
+      --card-bg: #183d2d;
+      --accent: #d4af37;
+      --red: #c0392b;
+      --green-wa: #25D366;
+      --text: #f5f6fa;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 20px 15px;
+      background: radial-gradient(circle at top, #1b4735, var(--bg-color));
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 2px solid var(--accent);
+      border-radius: 16px;
+      padding: 24px 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      text-align: center;
+      margin-top: 10px;
+    }
+    h1 {
+      margin: 0 0 5px 0;
+      font-size: 1.6rem;
+      color: var(--accent);
+    }
+    h2 {
+      margin: 0 0 20px 0;
+      font-size: 1.1rem;
+      font-weight: normal;
+      opacity: 0.9;
+    }
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #3a6b56;
+      background: #0d2219;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 1rem;
+      padding: 12px 16px;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    button:active {
+      transform: scale(0.97);
+    }
+    .btn-add {
+      background: var(--accent);
+      color: #111;
+    }
+    .btn-draw {
+      width: 100%;
+      background: var(--red);
+      color: #fff;
+      padding: 14px;
+      font-size: 1.1rem;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4);
+    }
+    .btn-reset {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #ccc;
+      margin-top: 24px;
+      font-size: 0.85rem;
+      padding: 8px 14px;
+    }
+    .name-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 15px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .name-tag {
+      background: #0f291e;
+      border: 1px solid #2e5946;
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+    }
+    .name-tag span {
+      cursor: pointer;
+      color: #ff6b6b;
+      font-weight: bold;
+    }
+    .result-item {
+      background: #0f291e;
+      border: 1px solid #2e5946;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+    .result-header {
+      font-weight: bold;
+      font-size: 1.05rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .result-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-wa {
+      flex: 1;
+      background: var(--green-wa);
+      color: #000;
+      text-decoration: none;
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      display: inline-block;
+    }
+    .btn-wa.sent {
+      background: #2b4c3b;
+      color: #b8d8c8;
+    }
+    .btn-open {
+      background: #2e5946;
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    .reveal-box {
+      background: #0d2219;
+      border: 2px dashed var(--accent);
+      border-radius: 14px;
+      padding: 25px 15px;
+      margin: 20px 0;
+    }
+    .target-name {
+      font-size: 2rem;
+      color: var(--accent);
+      font-weight: bold;
+      margin: 15px 0 5px 0;
+      letter-spacing: 0.5px;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .hint {
+      font-size: 0.85rem;
+      opacity: 0.75;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ANSICHT 1: ORGANISATOR (NAMEN EINGEBEN & AUSLOSEN) -->
+  <div id="organizer-view" class="container hidden">
+    <h1>🎄 Treffpunkt zum Fünfer</h1>
+    <h2>Weihnachtswichteln – Auslosung</h2>
+
+    <div id="setup-section">
+      <div class="input-group">
+        <input type="text" id="name-input" placeholder="Name eingeben (z. B. Angie)" onkeypress="handleEnter(event)">
+        <button class="btn-add" onclick="addName()">+ Dazu</button>
+      </div>
+
+      <ul id="name-list" class="name-list"></ul>
+
+      <button id="draw-btn" class="btn-draw hidden" onclick="drawNames()">🎲 Jetzt geheim auslosen</button>
+      <p class="hint">Trage alle Teilnehmer ein. Niemand kann sich selbst ziehen.</p>
+    </div>
+
+    <div id="results-section" class="hidden">
+      <p class="hint" style="margin-top:0; margin-bottom:15px;">
+        <strong>Auslosung fertig!</strong> Schicke jetzt jedem seinen persönlichen Geheim-Link:
+      </p>
+      <div id="links-container"></div>
+      <button class="btn-reset" onclick="resetAll()">🔄 Alles löschen & neu auslosen</button>
+    </div>
+  </div>
+
+  <!-- ANSICHT 2: EMPFÄNGER (GEHEIMES LOS ÖFFNEN) -->
+  <div id="receiver-view" class="container hidden">
+    <h1>🎄 Treffpunkt zum Fünfer</h1>
+    <h2>Dein geheimes Wichtel-Los</h2>
+
+    <p style="font-size: 1.15rem;">Servus <strong id="giver-name" style="color: var(--accent);"></strong>!</p>
+    <p class="hint">Achte darauf, dass dir gerade niemand auf das Handy schaut.</p>
+
+    <div id="pre-reveal">
+      <button class="btn-draw" onclick="revealTarget()">🎁 Jetzt Los aufdecken</button>
+    </div>
+
+    <div id="post-reveal" class="reveal-box hidden">
+      <div>Du beschenkst heuer:</div>
+      <div id="target-name" class="target-name"></div>
+      <div class="hint" style="margin-top: 10px;">🤫 Pssst! Behalt es für dich!</div>
+    </div>
+  </div>
+
+  <script>
+    let participants = [];
+    const STORAGE_KEY = 'fuenfer_wichteln_data_v1';
+
+    // URL-sichere Verschlüsselung (damit WhatsApp keine Sonderzeichen abschneidet)
+    function encodeLos(from, to) {
+      const payload = { f: from, t: to, r: Math.floor(1000 + Math.random() * 9000) };
+      const str = encodeURIComponent(JSON.stringify(payload));
+      return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function decodeLos(code) {
+      try {
+        let b64 = code.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        return JSON.parse(decodeURIComponent(atob(b64)));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Beim Start prüfen: Ist ein "?los=" im Link?
+    window.onload = function() {
+      const params = new URLSearchParams(window.location.search);
+      const losCode = params.get('los');
+
+      if (losCode) {
+        const data = decodeLos(losCode);
+        if (data && data.f && data.t) {
+          document.getElementById('receiver-view').classList.remove('hidden');
+          document.getElementById('giver-name').textContent = data.f;
+          document.getElementById('target-name').textContent = data.t;
+          return;
+        }
+      }
+
+      // Sonst Organisator-Ansicht zeigen
+      document.getElementById('organizer-view').classList.remove('hidden');
+      loadSavedState();
+    };
+
+    function handleEnter(e) {
+      if (e.key === 'Enter') addName();
+    }
+
+    function addName() {
+      const input = document.getElementById('name-input');
+      const raw = input.value.trim();
+      if (!raw) return;
+
+      // Erlaubt auch mehrere Namen mit Beistrich getrennt
+      const newNames = raw.split(',').map(n => n.trim()).filter(n => n.length > 0);
+      
+      for (const name of newNames) {
+        if (participants.some(p => p.toLowerCase() === name.toLowerCase())) {
+          alert(name + ' ist schon in der Liste!');
+          continue;
+        }
+        participants.push(name);
+      }
+
+      input.value = '';
+      input.focus();
+      renderNameList();
+    }
+
+    function removeName(index) {
+      participants.splice(index, 1);
+      renderNameList();
+    }
+
+    function renderNameList() {
+      const list = document.getElementById('name-list');
+      list.innerHTML = '';
+      participants.forEach((name, idx) => {
+        const li = document.createElement('li');
+        li.className = 'name-tag';
+        li.innerHTML = `${escapeHtml(name)} <span onclick="removeName(${idx})">✕</span>`;
+        list.appendChild(li);
+      });
+
+      const drawBtn = document.getElementById('draw-btn');
+      if (participants.length >= 3) {
+        drawBtn.classList.remove('hidden');
+        drawBtn.textContent = `🎲 Jetzt auslosen (${participants.length} Personen)`;
+      } else {
+        drawBtn.classList.add('hidden');
+      }
+    }
+
+    function drawNames() {
+      if (participants.length < 3) {
+        alert('Bitte gib mindestens 3 Namen ein!');
+        return;
+      }
+
+      // Array zufällig mischen (Fisher-Yates Shuffle)
+      const shuffled = [...participants];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      // Kreis-Prinzip: Jeder beschenkt den nächsten im gemischten Kreis
+      const pairs = shuffled.map((giver, idx) => {
+        const receiver = shuffled[(idx + 1) % shuffled.length];
+        return {
+          from: giver,
+          code: encodeLos(giver, receiver),
+          sent: false
+        };
+      });
+
+      // Alphabetisch sortieren für eine übersichtliche Button-Liste
+      pairs.sort((a, b) => a.from.localeCompare(b.from));
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(pairs));
+      renderResults(pairs);
+    }
+
+    function renderResults(pairs) {
+      document.getElementById('setup-section').classList.add('hidden');
+      document.getElementById('results-section').classList.remove('hidden');
+
+      const container = document.getElementById('links-container');
+      container.innerHTML = '';
+
+      const baseUrl = window.location.origin + window.location.pathname;
+
+      pairs.forEach((item, index) => {
+        const secretUrl = `${baseUrl}?los=${item.code}`;
+        const waText = `🎄 *Weihnachtswichteln – Treffpunkt zum Fünfer* 🎄\n\nServus ${item.from}! Hier ist dein geheimes Wichtel-Los. Klicke auf den Link, um zu sehen, wen du heuer beschenkst:\n\n👉 ${secretUrl}`;
+        const waLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        div.innerHTML = `
+          <div class="result-header">
+            <span>👤 ${escapeHtml(item.from)}</span>
+            <span id="status-${index}" style="font-size:0.85rem; color:#88d4ab;">${item.sent ? '✅ Geklickt' : ''}</span>
+          </div>
+          <div class="result-actions">
+            <a href="${waLink}" target="_blank" id="wa-btn-${index}" class="btn-wa ${item.sent ? 'sent' : ''}" onclick="markAsSent(${index})">
+              ${item.sent ? '✅ Nochmal per WhatsApp' : '📲 Per WhatsApp senden'}
+            </a>
+            <a href="${secretUrl}" target="_blank" class="btn-open" onclick="markAsSent(${index})">
+              👀 Los
+            </a>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function markAsSent(index) {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      const pairs = JSON.parse(saved);
+      if (pairs[index]) {
+        pairs[index].sent = true;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(pairs));
+        
+        const btn = document.getElementById(`wa-btn-${index}`);
+        const status = document.getElementById(`status-${index}`);
+        if (btn) {
+          btn.classList.add('sent');
+          btn.textContent = '✅ Nochmal per WhatsApp';
+        }
+        if (status) {
+          status.textContent = '✅ Geklickt';
+        }
+      }
+    }
+
+    function loadSavedState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const pairs = JSON.parse(saved);
+          if (Array.isArray(pairs) && pairs.length > 0) {
+            renderResults(pairs);
+          }
+        } catch (e) {}
+      }
+    }
+
+    function resetAll() {
+      if (confirm('Willst du die aktuelle Auslosung wirklich löschen und neu starten?')) {
+        localStorage.removeItem(STORAGE_KEY);
+        participants = [];
+        document.getElementById('results-section').classList.add('hidden');
+        document.getElementById('setup-section').classList.remove('hidden');
+        renderNameList();
+      }
+    }
+
+    function revealTarget() {
+      document.getElementById('pre-reveal').classList.add('hidden');
+      document.getElementById('post-reveal').classList.remove('hidden');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+  </script>
+</body>
+</html>
