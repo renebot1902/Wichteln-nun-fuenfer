@@ -142,34 +142,22 @@
       justify-content: space-between;
       align-items: center;
     }
-    .result-actions {
-      display: flex;
-      gap: 8px;
-    }
     .btn-wa {
-      flex: 1;
+      width: 100%;
       background: var(--green-wa);
       color: #000;
       text-decoration: none;
       text-align: center;
-      padding: 10px;
+      padding: 12px;
       border-radius: 8px;
       font-weight: bold;
       font-size: 0.95rem;
       display: inline-block;
+      transition: background 0.2s;
     }
     .btn-wa.sent {
       background: #2b4c3b;
       color: #b8d8c8;
-    }
-    .btn-open {
-      background: #2e5946;
-      color: #fff;
-      text-decoration: none;
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      text-align: center;
     }
     .reveal-box {
       background: #0d2219;
@@ -217,7 +205,7 @@
 
     <div id="results-section" class="hidden">
       <p class="hint" style="margin-top:0; margin-bottom:15px;">
-        <strong>Auslosung fertig!</strong> Schicke jetzt jedem seinen persönlichen Geheim-Link:
+        <strong>Auslosung fertig!</strong> Schicke jedem seinen Link via WhatsApp. Du kannst die Ergebnisse vorab nicht einsehen.
       </p>
       <div id="links-container"></div>
       <button class="btn-reset" onclick="resetAll()">🔄 Alles löschen & neu auslosen</button>
@@ -245,9 +233,9 @@
 
   <script>
     let participants = [];
-    const STORAGE_KEY = 'fuenfer_wichteln_data_v1';
+    const STORAGE_KEY = 'fuenfer_wichteln_data_v2';
 
-    // URL-sichere Verschlüsselung (damit WhatsApp keine Sonderzeichen abschneidet)
+    // URL-sichere Verschlüsselung
     function encodeLos(from, to) {
       const payload = { f: from, t: to, r: Math.floor(1000 + Math.random() * 9000) };
       const str = encodeURIComponent(JSON.stringify(payload));
@@ -264,7 +252,6 @@
       }
     }
 
-    // Beim Start prüfen: Ist ein "?los=" im Link?
     window.onload = function() {
       const params = new URLSearchParams(window.location.search);
       const losCode = params.get('los');
@@ -279,7 +266,6 @@
         }
       }
 
-      // Sonst Organisator-Ansicht zeigen
       document.getElementById('organizer-view').classList.remove('hidden');
       loadSavedState();
     };
@@ -293,7 +279,6 @@
       const raw = input.value.trim();
       if (!raw) return;
 
-      // Erlaubt auch mehrere Namen mit Beistrich getrennt
       const newNames = raw.split(',').map(n => n.trim()).filter(n => n.length > 0);
       
       for (const name of newNames) {
@@ -327,7 +312,7 @@
       const drawBtn = document.getElementById('draw-btn');
       if (participants.length >= 3) {
         drawBtn.classList.remove('hidden');
-        drawBtn.textContent = `🎲 Jetzt auslosen (${participants.length} Personen)`;
+        drawBtn.textContent = `🎲 Jetzt geheim auslosen (${participants.length} Personen)`;
       } else {
         drawBtn.classList.add('hidden');
       }
@@ -339,14 +324,12 @@
         return;
       }
 
-      // Array zufällig mischen (Fisher-Yates Shuffle)
       const shuffled = [...participants];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      // Kreis-Prinzip: Jeder beschenkt den nächsten im gemischten Kreis
       const pairs = shuffled.map((giver, idx) => {
         const receiver = shuffled[(idx + 1) % shuffled.length];
         return {
@@ -356,7 +339,6 @@
         };
       });
 
-      // Alphabetisch sortieren für eine übersichtliche Button-Liste
       pairs.sort((a, b) => a.from.localeCompare(b.from));
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(pairs));
@@ -382,16 +364,11 @@
         div.innerHTML = `
           <div class="result-header">
             <span>👤 ${escapeHtml(item.from)}</span>
-            <span id="status-${index}" style="font-size:0.85rem; color:#88d4ab;">${item.sent ? '✅ Geklickt' : ''}</span>
+            <span id="status-${index}" style="font-size:0.85rem; color:#88d4ab;">${item.sent ? '✅ Geteilt' : ''}</span>
           </div>
-          <div class="result-actions">
-            <a href="${waLink}" target="_blank" id="wa-btn-${index}" class="btn-wa ${item.sent ? 'sent' : ''}" onclick="markAsSent(${index})">
-              ${item.sent ? '✅ Nochmal per WhatsApp' : '📲 Per WhatsApp senden'}
-            </a>
-            <a href="${secretUrl}" target="_blank" class="btn-open" onclick="markAsSent(${index})">
-              👀 Los
-            </a>
-          </div>
+          <a href="${waLink}" target="_blank" id="wa-btn-${index}" class="btn-wa ${item.sent ? 'sent' : ''}" onclick="markAsSent(${index})">
+            ${item.sent ? '✅ Nochmal per WhatsApp' : '📲 Per WhatsApp senden'}
+          </a>
         `;
         container.appendChild(div);
       });
@@ -412,7 +389,7 @@
           btn.textContent = '✅ Nochmal per WhatsApp';
         }
         if (status) {
-          status.textContent = '✅ Geklickt';
+          status.textContent = '✅ Geteilt';
         }
       }
     }
